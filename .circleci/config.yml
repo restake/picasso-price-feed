@@ -1,0 +1,68 @@
+version: 2.1
+
+orbs:
+  go: "circleci/go@1.7.1"
+  rust: "circleci/rust@1.6.0"
+
+parameters:
+  version:
+    type: "string"
+    default: "v2.2.1"
+  run:
+    type: "boolean"
+    default: false
+
+workflows:
+  picasso:
+    when: << pipeline.parameters.run >>
+    jobs:
+      - build
+      - publish:
+          context: "github-context"
+          requires:
+            - build
+
+jobs:
+  build:
+    executor:
+      name: "rust/default"
+      tag: "1.65.0"
+    steps:
+      - run:
+          name: "Clone Composable source"
+          command: git clone -b << pipeline.parameters.version >> https://github.com/ComposableFi/composable.git composable
+      - restore_cache:
+          keys:
+            - 'cargo-{{ checksum "composable/Cargo.lock" }}'
+      - run:
+          name: "Build Composable Oracle price feed binary"
+          command: |
+            cd composable
+            cargo build --release --package price-feed
+            mv "${HOME}/project/composable/target/release/price-feed" "${HOME}/project/composable/target/release/price-feed-<< pipeline.parameters.version >>"
+      - save_cache:
+          key: 'cargo-{{ checksum "composable/Cargo.lock" }}'
+          paths:
+            - ~/.cargo
+      - persist_to_workspace:
+          root: "./composable/target/release"
+          paths:
+            - price-feed*
+  publish:
+    executor:
+      name: "go/default"
+      tag: "1.17"
+    steps:
+      - checkout
+      - attach_workspace:
+          at: '/tmp/binaries'
+      - run:
+          name: "Install GHR"
+          command: go get github.com/tcnksm/ghr
+      - run:
+          name: "Publish Github release"
+          command: |
+            ghr -t "${GITHUB_TOKEN}" \
+              -n "<< pipeline.parameters.version >>" \
+              -recreate \
+              /tmp/binaries/price-feed-<< pipeline.parameters.version >>
