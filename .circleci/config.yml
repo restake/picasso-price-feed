@@ -64,5 +64,5 @@ jobs:
           command: |
             ghr -t "${GITHUB_TOKEN}" \
               -n "<< pipeline.parameters.version >>" \
-              -recreate \
+              -recreate "<< pipeline.parameters.version >>" \
               /tmp/binaries/price-feed-<< pipeline.parameters.version >>
