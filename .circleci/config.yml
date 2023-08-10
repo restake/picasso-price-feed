@@ -30,22 +30,22 @@ jobs:
     steps:
       - run:
           name: "Clone Composable source"
-          command: git clone -b << pipeline.parameters.version >> https://github.com/ComposableFi/composable.git composable
+          command: git clone -b release-<< pipeline.parameters.version >> https://github.com/ComposableFi/composable.git composable
       - restore_cache:
           keys:
-            - 'cargo-{{ checksum "composable/Cargo.lock" }}'
+            - 'cargo-{{ checksum "composable/code/Cargo.lock" }}'
       - run:
           name: "Build Composable Oracle price feed binary"
           command: |
-            cd composable
+            cd composable/code
             cargo build --release --package price-feed
-            mv "${HOME}/project/composable/target/release/price-feed" "${HOME}/project/composable/target/release/price-feed-<< pipeline.parameters.version >>"
+            mv "${HOME}/project/composable/code/target/release/price-feed" "${HOME}/project/composable/code/target/release/price-feed-<< pipeline.parameters.version >>"
       - save_cache:
-          key: 'cargo-{{ checksum "composable/Cargo.lock" }}'
+          key: 'cargo-{{ checksum "composable/code/Cargo.lock" }}'
           paths:
             - ~/.cargo
       - persist_to_workspace:
-          root: "./composable/target/release"
+          root: "./composable/code/target/release"
           paths:
             - price-feed*
   publish:
