@@ -8,6 +8,9 @@ parameters:
   version:
     type: "string"
     default: "v2.2.1"
+  branch:
+    type: "string"
+    default: "release"
   run:
     type: "boolean"
     default: false
@@ -35,7 +38,7 @@ jobs:
             sudo apt-get install -y libssl-dev libudev-dev pkg-config zlib1g-dev llvm clang cmake make libprotobuf-dev protobuf-compiler
       - run:
           name: "Clone Composable source"
-          command: git clone -b release-<< pipeline.parameters.version >> https://github.com/ComposableFi/composable.git composable
+          command: git clone -b << pipeline.parameters.branch >> https://github.com/ComposableFi/composable.git composable
       - restore_cache:
           keys:
             - 'cargo-{{ checksum "composable/code/Cargo.lock" }}'
